@@ -1,0 +1,3 @@
+[submodule "src/thread-pool"]
+	path = src/BS_thread_pool
+	url = https://github.com/bshoshany/thread-pool.git
