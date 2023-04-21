@@ -11,7 +11,6 @@ public:
     PinnedAffinityExecutor(unsigned n_workers = std::thread::hardware_concurrency());
     ~PinnedAffinityExecutor();
     void Invoke(std::function<void(unsigned)>&& f);
-    void Wait();
 
 private:
     typedef std::atomic_uint64_t atomic_unsigned_type;

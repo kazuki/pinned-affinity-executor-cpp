@@ -24,16 +24,16 @@ void PinnedAffinityExecutor::WorkerThread(unsigned thread_index) {
 
 PinnedAffinityExecutor::PinnedAffinityExecutor(unsigned n_workers)
     : threads_(), f_(), signal_(0), shutdown_(false),
-      bitmap_((n_workers + atomic_unsigned_type_bits - 1) / atomic_unsigned_type_bits)
+      bitmap_(((n_workers - 1) + atomic_unsigned_type_bits - 1) / atomic_unsigned_type_bits)
 {
-    threads_.reserve(n_workers);
-    for (unsigned i = 0; i < n_workers; i++) {
+    threads_.reserve(n_workers - 1);
+    for (unsigned i = 0; i < n_workers - 1; i++) {
         threads_.emplace_back([&, i]() {
             WorkerThread(i);
         });
     }
+    numa_run_on_node(n_workers - 1);
     Invoke([](unsigned) {});
-    Wait();
 }
 
 PinnedAffinityExecutor::~PinnedAffinityExecutor() {
@@ -41,17 +41,6 @@ PinnedAffinityExecutor::~PinnedAffinityExecutor() {
     Invoke([](unsigned) {});
     for (auto& t : threads_)
         t.join();
-}
-
-void PinnedAffinityExecutor::Wait() {
-    while (1) {
-        const auto old = signal_.load(std::memory_order_relaxed);
-        if (old == threads_.size()) {
-            signal_.store(0, std::memory_order_relaxed);
-            break;
-        }
-        signal_.wait(old);
-    }
 }
 
 void PinnedAffinityExecutor::Invoke(std::function<void(unsigned)>&& f) {
@@ -63,5 +52,16 @@ void PinnedAffinityExecutor::Invoke(std::function<void(unsigned)>&& f) {
     if (threads_.size() % atomic_unsigned_type_bits != 0) {
         bitmap_[bitmap_.size() - 1].store((static_cast<atomic_unsigned_type::value_type>(1) << (threads_.size() % atomic_unsigned_type_bits)) - 1, std::memory_order_release);
         bitmap_[bitmap_.size() - 1].notify_all();
+    }
+
+    f_(threads_.size());
+
+    while (1) {
+        const auto old = signal_.load(std::memory_order_relaxed);
+        if (old == threads_.size()) {
+            signal_.store(0, std::memory_order_relaxed);
+            break;
+        }
+        signal_.wait(old);
     }
 }

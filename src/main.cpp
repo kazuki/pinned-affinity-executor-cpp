@@ -31,7 +31,6 @@ int main() {
     for (int i = 0; i < N_LOOP; ++i) {
         const auto begin = high_resolution_clock::now();
         executor.Invoke([](unsigned) {});
-        executor.Wait();
         const auto end = high_resolution_clock::now();
         times.push_back(duration_cast<duration<double, std::milli>>(end - begin).count());
     }
