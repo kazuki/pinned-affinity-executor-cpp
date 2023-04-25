@@ -11,6 +11,7 @@ include_directories(${LIBNUMA_INCLUDE_DIRS})
 
 add_library(pinned_affinity_executor STATIC src/executor.cpp)
 target_include_directories(pinned_affinity_executor INTERFACE src)
+target_link_libraries(pinned_affinity_executor ${LIBNUMA_LIBRARIES})
 
-add_executable(test src/main.cpp)
-target_link_libraries(test pinned_affinity_executor ${LIBNUMA_LIBRARIES})
+add_executable(pinned_affinity_executor_test src/main.cpp)
+target_link_libraries(pinned_affinity_executor_test pinned_affinity_executor ${LIBNUMA_LIBRARIES})
