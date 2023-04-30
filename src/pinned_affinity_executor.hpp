@@ -13,6 +13,13 @@ public:
     void Invoke(std::function<void(unsigned)>&& f);
     inline unsigned NumberOfWorkers() { return threads_.size(); }
 
+    template<typename T>
+    std::tuple<T, T> SplitTask(T n_tasks, unsigned worker_index) {
+        auto task_size = (n_tasks + (NumberOfWorkers() - 1)) / NumberOfWorkers();
+        return std::make_tuple(task_size * worker_index,
+                               std::min(n_tasks, task_size * (worker_index + 1)));
+    }
+
 private:
     typedef std::atomic_uint64_t atomic_unsigned_type;
     static constexpr int atomic_unsigned_type_bits = std::numeric_limits<atomic_unsigned_type::value_type>::digits;
